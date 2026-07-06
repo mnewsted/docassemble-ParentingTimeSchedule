@@ -1,0 +1,216 @@
+metadata:
+  title: Make or change a parenting time schedule
+  short title: Parenting time schedule
+  comment: This program helps you ask the court to make or change a parenting time schedule.
+  authors:
+    - Jim Graszer
+    - Matt Newsted
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ILAO:ilao-interview-framework.yml
+  - docassemble.ILAO:shared-basic-questions.yml
+---
+objects:
+  - users: ALPeopleList.using(there_are_any=True)
+  - users[i].jail_delivery_address: ALAddress
+  - other_parties: ALPeopleList.using(there_are_any=True)
+  - other_parties[i].jail_delivery_address: ALAddress
+  - lawyer: ALIndividual
+  - lawyer.jail_delivery_address: ALAddress
+  - children: ALPeopleList.using(object_type=ALIndividual, there_are_any=True, complete_attribute='complete')
+  - delivery_parties: ALPeopleList.using(there_are_any=True)
+  - court_list: ALCourtLoader.using(file_name='docassemble.ILAO:data/sources/il_courts.xlsx')
+  - week: DAList.using(object_type=Thing, there_are_any=True, complete_attribute='complete')
+  - week[i].day: DAList.using(object_type=Thing, auto_gather=True, there_are_any=True)
+  - new_years_day: Thing
+  - mothers_day: Thing
+  - memorial_day: Thing
+  - fathers_day: Thing
+  - july_4th: Thing
+  - labor_day: Thing
+  - halloween: Thing
+  - thanksgiving: Thing
+  - christmas_eve: Thing
+  - christmas_day: Thing
+  - new_years_eve: Thing
+  - holiday_list: DAList.using(object_type=Thing, there_are_any=False)
+  - other_holidays: DAList.using(object_type=Thing, complete_attribute='complete')
+---
+code: |
+  al_form_type = 'existing_case'
+  ilao_easy_form_title = "Make or change a parenting time schedule"
+  ilao_easy_form_url = "https://www.illinoislegalaid.org/legal-information/make-or-change-parenting-time-schedule"
+  form_name = "Petition to Modify Parenting Time Schedule"
+  github_user = 'IllinoisLegalAidOnline'
+  github_repo_name = 'docassemble-ParentingTimeSchedule'
+  allowed_courts = ['Circuit']
+---
+# Road map
+sections:
+  - section_intro: Start
+  - section_qualify: Do you qualify?
+  - section_about_children: About your children
+  - section_about_other_parent: About the other parent
+  - section_schedule: Schedule
+  - section_case: Case details
+  - section_delivery: Notice and delivery
+  - section_about_you: About you
+  - section_download: Download  
+---
+# interview order block
+mandatory: True
+code: |
+  nav.set_section('section_intro')
+  sees_nav_bar
+  snapshot_start
+  how_to_use
+  about_parenting_time
+  accept_terms
+  child_support_note
+  whats_next
+
+  nav.set_section('section_qualify')
+  if not is_user_parent:
+    user_not_parent_kickout
+  if not has_existing_order:
+    no_existing_order_kickout
+  if not is_order_from_il:
+    order_not_il_kickout
+  if not is_child_resident:
+    child_not_resident_kickout
+  if any_domestic_abuse:
+    domestic_abuse_kickout
+  
+  nav.set_section('section_about_children')
+  children_intro
+  children.gather()
+  
+  nav.set_section('section_about_other_parent')
+  other_parent_intro
+  other_parties[0].name.first
+  other_parties[0].address.address
+  if other_parent_has_lawyer:
+    lawyer.name.first
+    lawyer.address.address
+  
+  if not have_set_schedule:
+    changed_circumstances
+  
+  users[0].name.initials
+  schedule_start
+  week.gather()
+  if week.number_gathered() == 4:
+    four_week_review
+    
+  if holiday_list.any_true():
+    prepopulated_holidays
+    other_holidays.gather()
+  
+  if school_breaks:
+    spring_break
+    summer_break
+    winter_break
+  
+  transportation
+  exchange_location
+  first_refusal
+  scheule_start
+  if additional_time:
+    additional_time_details
+  
+  nav.set_section('section_section_case')
+  filing_county
+  order_date
+  case_number
+  party_label
+  
+  nav.set_section('section_delivery')
+  notice_intro
+  if has_court_date:
+    hearing_date
+    attend_court
+  
+  delivery_intro
+  build_delivery_parties
+  
+  for person in delivery_parties:
+    if person.knows_delivery_method:
+      person.email_delivery
+      person.delivery_date
+  
+  hand_delivery_info
+  courthouse_info
+  
+  nav.set_section('section_about_you')
+  users[0].name.first
+  hide_address
+  users[0].address.address
+  users[0].phone_number
+  e_signature
+  next_steps
+  
+  nav.set_section('section_download')
+  
+  forms_assembling
+  snapshot_forms
+  get_docs_screen
+---
+code: |
+  stuff_to_snapshot = {
+  	'start_time': str(current_datetime().format_datetime()),
+  	'started_interview': True, 
+  	}
+
+  try:
+    stuff_to_snapshot['ip_address'] = device(ip=True)
+  except:
+    pass
+
+  stuff_to_snapshot['zip'] = showifdef('users[0].address.zip')
+  
+  stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
+  
+  try:
+    stuff_to_snapshot['session_id'] = current_context().session
+  except:
+    pass
+  
+    store_variables_snapshot(
+  	data=stuff_to_snapshot, persistent=True
+  	)
+  snapshot_interview_state = True
+---
+code: |
+  snapshot_interview_state
+  snapshot_start = True  
+---
+code: |
+  reconsider('snapshot_interview_state')
+  snapshot_forms = True
+---
+code: |
+  days_of_the_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  holidays = ["New Year's Day", "Mother's Day", "Memorial Day", "Father's Day", "July 4", "Labor Day", "Halloween", "Thanksgiving", "Christmas Eve", "Christmas Day", "New Year's Eve"]
+
+  holiday_objects = {
+    "New Year's Day": new_years_day,
+    "Mother's Day": mothers_day,
+    "Memorial Day": memorial_day,
+    "Father's Day": fathers_day,
+    "July 4": july_4th,
+    "Labor Day": labor_day,
+    "Halloween": halloween,
+    "Thanksgiving": thanksgiving,
+    "Christmas Eve": christmas_eve,
+    "Christmas Day": christmas_day,
+    "New Year's Eve": new_years_eve
+  }
+---
+code: |
+  def get_holiday_name(obj):
+      for key, value in holiday_objects.items():
+          if value == obj:
+              return key
+      return "Unknown Holiday"
+---
