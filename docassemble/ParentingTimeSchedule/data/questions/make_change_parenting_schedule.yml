@@ -89,6 +89,7 @@ code: |
   nav.set_section('section_about_other_parent')
   other_parent_intro
   other_parties[0].name.first
+  other_parties[0].birthdate
   other_parties[0].address.address
   if other_parent_has_lawyer:
     lawyer.name.first
@@ -96,14 +97,16 @@ code: |
   
   if not have_set_schedule:
     changed_circumstances
-  
-  users[0].name.initials
-  schedule_start
-  week.gather()
-  if week.number_gathered() == 4:
-    four_week_review
+
+  if weekly_schedule:
+    users[0].name.initials
+    schedule_start
+    week.gather()
+    if week.number_gathered() == 4:
+      four_week_review
     
   if holiday_list.any_true():
+    users[0].name.initials
     prepopulated_holidays
     other_holidays.gather()
   
@@ -115,7 +118,7 @@ code: |
   transportation
   exchange_location
   first_refusal
-  scheule_start
+  communication
   if additional_time:
     additional_time_details
   
@@ -144,6 +147,7 @@ code: |
   
   nav.set_section('section_about_you')
   users[0].name.first
+  users[0].birthdate
   hide_address
   users[0].address.address
   users[0].phone_number
