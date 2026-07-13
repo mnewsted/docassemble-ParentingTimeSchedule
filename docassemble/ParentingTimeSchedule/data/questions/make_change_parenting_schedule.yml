@@ -98,6 +98,7 @@ code: |
   if not have_set_schedule:
     changed_circumstances
 
+  schedule_start
   if weekly_schedule:
     users[0].name.initials
     schedule_start
@@ -117,8 +118,6 @@ code: |
   
   transportation
   exchange_location
-  first_refusal
-  communication
   if additional_time:
     additional_time_details
   
@@ -172,6 +171,11 @@ code: |
     pass
 
   stuff_to_snapshot['zip'] = showifdef('users[0].address.zip')
+
+  if defined('have_set_schedule'):
+    stuff_to_snapshot['motion_type'] = 'modify'
+  else:
+    stuff_to_snapshot['motion_type'] = 'specify'
   
   stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
   
